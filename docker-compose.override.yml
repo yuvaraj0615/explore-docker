@@ -1,0 +1,53 @@
+version: '3.4'
+
+services:
+  webapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - DB_CONNECTION_STRING="Server=postgresdb;Port=5432;Database=blogdb;User Id=bloguser;Password=bloguser;"
+    ports:
+      - "51080:80"
+      - "51443:443"
+    depends_on:
+      - postgresdb
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    networks:
+      - my-network
+  webapp:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - WebApiBaseAddress=http://webapi/
+    ports:
+      - "50080:80"
+      - "50443:443"
+    depends_on:
+      - webapi
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    networks:
+      - my-network
+
+  postgresdb:
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+      - ./dbscripts/seed.sql :/docker-entrypoint-initdb.d/seed.sql
+    ports:
+      - 5432 
+    environment:
+      - POSTGRES_USER=bloguser
+      - POSTGRES_PASSWORD=bloguser
+      - POSTGRES_DB=blogdb
+    networks:
+      - my-network
+
+volumes:
+  postgres-data:
+
+networks:
+  my-network:
+    external: true
